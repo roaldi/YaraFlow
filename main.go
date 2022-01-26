@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 )
 
 const BufferSize = 1024 * 1024 * 10 // KB -> MB -> 10MB
@@ -61,7 +62,7 @@ func fileStream(filename string) {
 		buffer := make([]byte, BufferSize)
 		bytesread, err := f.Read(buffer)
 		returnString := runYara(buffer, filename)
-		fmt.Printf("Offset: %d - %d : %s \n", LastOffset, LastOffset+bytesread, returnString)
+		fmt.Printf("Offset: 0x%s - 0x%s : %s \n", strconv.FormatInt(int64(LastOffset), 16), strconv.FormatInt(int64(LastOffset+bytesread), 16), returnString)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println(err)
