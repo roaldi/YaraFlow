@@ -35,21 +35,11 @@ func printMatches(item string, m []yara.MatchRule, err error) string {
 
 }
 
-func runYara(fileData []byte, fileName string) string {
-	c, err := yara.NewCompiler()
-	if err != nil {
-		log.Fatalf("Failed to initialize YARA compiler: %s", err)
-	}
-	f, err := os.Open(os.Args[2])
-	c.AddFile(f, "index")
+func runYara(fileData []byte, fileName string, r *yara.Rules) string {
 
-	r, err := c.GetRules()
-	if err != nil {
-		log.Fatalf("Failed to compile rules: %s", err)
-	}
 	s, _ := yara.NewScanner(r)
 	var m yara.MatchRules
-	err = s.SetCallback(&m).ScanMem(fileData)
+	err := s.SetCallback(&m).ScanMem(fileData)
 	matches := printMatches(fileName, m, err)
 
 	return matches
@@ -58,10 +48,22 @@ func runYara(fileData []byte, fileName string) string {
 func fileStream(filename string) {
 	f, _ := os.OpenFile(filename, os.O_RDONLY, 0644)
 
+	c, err := yara.NewCompiler()
+	if err != nil {
+		log.Fatalf("Failed to initialize YARA compiler: %s", err)
+	}
+	fy, err := os.Open(os.Args[2])
+	c.AddFile(fy, "index")
+	r, err := c.GetRules()
+
+	if err != nil {
+		log.Fatalf("Failed to compile rules: %s", err)
+	}
+
 	for {
 		buffer := make([]byte, BufferSize)
 		bytesread, err := f.Read(buffer)
-		returnString := runYara(buffer, filename)
+		returnString := runYara(buffer, filename, r)
 		fmt.Printf("Offset: 0x%s - 0x%s : %s \n", strconv.FormatInt(int64(LastOffset), 16), strconv.FormatInt(int64(LastOffset+bytesread), 16), returnString)
 		if err != nil {
 			if err != io.EOF {
